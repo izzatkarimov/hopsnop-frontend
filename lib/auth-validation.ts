@@ -20,6 +20,11 @@ export const EMAIL_MAX_LENGTH = 255;
 export const PASSWORD_MIN_LENGTH = 12;
 export const PASSWORD_MAX_LENGTH = 128;
 
+/** Whether the text has the shape of a username. Says nothing about existence. */
+export function isUsername(value: string): boolean {
+  return USERNAME_PATTERN.test(value);
+}
+
 export function validateDisplayName(value: string): string | null {
   const name = value.trim();
   if (name === "") return "Enter a display name.";

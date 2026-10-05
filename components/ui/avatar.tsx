@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import type { User } from "@/lib/types";
+import { isHttpUrl } from "@/lib/url";
 
 // Background colours chosen for sufficient contrast with white initials.
 const colors = [
@@ -11,6 +15,12 @@ const colors = [
   "bg-indigo-700",
   "bg-fuchsia-700",
 ];
+
+const sizes = {
+  sm: "size-9 text-sm",
+  md: "size-10 text-base",
+  lg: "size-20 text-3xl",
+};
 
 function colorFor(username: string): string {
   let hash = 0;
@@ -27,21 +37,45 @@ function initialsFor(displayName: string): string {
 }
 
 type AvatarProps = {
-  user: Pick<User, "username" | "displayName">;
-  size?: "sm" | "md";
+  user: Pick<User, "username" | "displayName" | "avatarUrl">;
+  size?: keyof typeof sizes;
 };
 
 /**
- * Initials-based avatar until profile images exist.
- * Decorative: the user's name is always shown next to it.
+ * A user's picture, or their initials if they have none or it cannot be
+ * loaded. Decorative: the user's name is always shown next to it.
  */
 export function Avatar({ user, size = "md" }: AvatarProps) {
-  const sizeClass = size === "sm" ? "size-9 text-sm" : "size-10 text-base";
+  // Remembers the URL that failed rather than a flag, so that a changed URL
+  // is tried again.
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+
+  // The URL was chosen by a user. Only plain web addresses are ever used.
+  const url = user.avatarUrl && isHttpUrl(user.avatarUrl) ? user.avatarUrl : null;
+
+  if (url && url !== failedUrl) {
+    return (
+      // A plain <img> on purpose. next/image would have the Next.js server
+      // download whatever address a user entered, and it only accepts hosts
+      // listed in advance. no-referrer keeps the address of the page being
+      // viewed from the host that serves the picture.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={url}
+        alt=""
+        referrerPolicy="no-referrer"
+        loading="lazy"
+        decoding="async"
+        onError={() => setFailedUrl(url)}
+        className={`shrink-0 rounded-full bg-hover object-cover ${sizes[size]}`}
+      />
+    );
+  }
 
   return (
     <span
       aria-hidden="true"
-      className={`flex shrink-0 select-none items-center justify-center rounded-full font-semibold text-white ${sizeClass} ${colorFor(user.username)}`}
+      className={`flex shrink-0 select-none items-center justify-center rounded-full font-semibold text-white ${sizes[size]} ${colorFor(user.username)}`}
     >
       {initialsFor(user.displayName)}
     </span>

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useAuth } from "./auth-provider";
+import { SessionLoading } from "./session-loading";
 
 /**
  * Renders its children only for a signed-in user and sends everyone else to
@@ -48,15 +49,5 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   }
 
   // Checking the session, or signed out and about to leave for /login.
-  return (
-    <div role="status" className="flex min-h-dvh items-center justify-center">
-      <span
-        aria-hidden="true"
-        className="flex size-10 animate-pulse items-center justify-center rounded-xl bg-accent text-xl font-bold leading-none text-accent-foreground"
-      >
-        h
-      </span>
-      <span className="sr-only">Loading…</span>
-    </div>
-  );
+  return <SessionLoading />;
 }

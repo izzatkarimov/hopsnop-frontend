@@ -60,15 +60,21 @@ const EMAIL_TAKEN = "Email already in use.";
  * not carried into application state.
  */
 function toUser(account: AccountResponse): User {
-  const { id, username, display_name: displayName } = account;
+  const {
+    id,
+    username,
+    display_name: displayName,
+    avatar_url: avatarUrl,
+  } = account;
   if (
     typeof id !== "string" ||
     typeof username !== "string" ||
-    typeof displayName !== "string"
+    typeof displayName !== "string" ||
+    (typeof avatarUrl !== "string" && avatarUrl !== null)
   ) {
     throw new ApiError("server", null, "The server sent an unexpected account.");
   }
-  return { id, username, displayName };
+  return { id, username, displayName, avatarUrl };
 }
 
 /** The signed-in user, or null if the browser has no valid session. */

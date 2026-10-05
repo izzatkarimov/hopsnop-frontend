@@ -30,6 +30,13 @@ type AuthActions = {
   logOut: () => Promise<void>;
   /** Checks the session again after a failed check. */
   retry: () => void;
+  /**
+   * Applies a profile change that also affects how the signed-in user is
+   * shown in the shell, so that it does not show stale details.
+   */
+  updateUser: (changes: Partial<Pick<User, "displayName" | "avatarUrl">>) => void;
+  /** To be called when the API answers that the session is no longer valid. */
+  expireSession: () => void;
 };
 
 type AuthContextValue = AuthState & AuthActions;
@@ -37,7 +44,9 @@ type AuthContextValue = AuthState & AuthActions;
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 /**
- * Holds who is signed in, for the whole application.
+ * Holds who is signed in, for the whole application: the user's identity
+ * (id, username, display name, avatar) and nothing more. Profile data such
+ * as the bio or follower counts is loaded by the pages that show it.
  *
  * The session itself is an HttpOnly cookie that JavaScript cannot read, so
  * the only way to know whether the browser is signed in is to ask the backend
@@ -98,9 +107,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAttempt((current) => current + 1);
   }, []);
 
+  const updateUser = useCallback<AuthActions["updateUser"]>((changes) => {
+    setState((current) =>
+      current.status === "authenticated"
+        ? { ...current, user: { ...current.user, ...changes } }
+        : current,
+    );
+  }, []);
+
+  const expireSession = useCallback(() => {
+    latestChange.current++;
+    setState({ status: "unauthenticated" });
+  }, []);
+
   const value = useMemo(
-    () => ({ ...state, logIn, logOut, retry }),
-    [state, logIn, logOut, retry],
+    () => ({ ...state, logIn, logOut, retry, updateUser, expireSession }),
+    [state, logIn, logOut, retry, updateUser, expireSession],
   );
 
   return <AuthContext value={value}>{children}</AuthContext>;

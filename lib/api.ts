@@ -38,6 +38,8 @@ export type ApiErrorKind =
   | "unauthenticated"
   /** 403: the request was understood but is not allowed. */
   | "forbidden"
+  /** 404: there is no such resource, or it is not available. */
+  | "not_found"
   /** 409: the request conflicts with existing data. */
   | "conflict"
   /** Any other 4xx, e.g. an invalid or expired token. */
@@ -140,6 +142,7 @@ export async function apiRequest<T>(
 function kindForStatus(status: number): ApiErrorKind {
   if (status === 401) return "unauthenticated";
   if (status === 403) return "forbidden";
+  if (status === 404) return "not_found";
   if (status === 409) return "conflict";
   if (status === 422) return "validation";
   if (status >= 500) return "server";

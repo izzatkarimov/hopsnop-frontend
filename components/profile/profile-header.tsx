@@ -1,0 +1,67 @@
+import type { ReactNode } from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { LockIcon } from "@/components/ui/icons";
+import { formatCount } from "@/lib/format";
+import type { Profile } from "@/lib/types";
+
+type ProfileHeaderProps = {
+  profile: Profile;
+  /** Control shown opposite the avatar, e.g. "Edit profile". */
+  action?: ReactNode;
+};
+
+/** The top of a profile: who this is, their bio and their follow counts. */
+export function ProfileHeader({ profile, action }: ProfileHeaderProps) {
+  return (
+    <section
+      aria-label="Profile details"
+      className="border-b border-border px-4 py-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <Avatar user={profile} size="lg" />
+        {action}
+      </div>
+
+      <div className="mt-3">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <h2 className="min-w-0 text-xl font-semibold leading-tight wrap-break-word">
+            {profile.displayName}
+          </h2>
+          {profile.isPrivate && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
+              <LockIcon width={12} height={12} />
+              Private account
+            </span>
+          )}
+        </div>
+        <p className="text-body text-muted">@{profile.username}</p>
+      </div>
+
+      {profile.bio && (
+        // Written by the user, so it is only ever rendered as text.
+        <p className="mt-3 whitespace-pre-wrap text-body leading-relaxed wrap-break-word">
+          {profile.bio}
+        </p>
+      )}
+
+      <p className="mt-3 flex gap-4 text-body text-muted">
+        <Count value={profile.followingCount} label="Following" />
+        <Count
+          value={profile.followersCount}
+          label={profile.followersCount === 1 ? "Follower" : "Followers"}
+        />
+      </p>
+    </section>
+  );
+}
+
+function Count({ value, label }: { value: number; label: string }) {
+  return (
+    <span>
+      <span className="font-semibold text-foreground tabular-nums">
+        {formatCount(value)}
+      </span>{" "}
+      {label}
+    </span>
+  );
+}
