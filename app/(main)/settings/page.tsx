@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -11,6 +12,7 @@ export default function SettingsPage() {
       <EmptyState
         title="Settings are coming soon"
         description="Account, privacy, and security controls will live here."
+        action={<LogoutButton variant="button" />}
       />
     </>
   );

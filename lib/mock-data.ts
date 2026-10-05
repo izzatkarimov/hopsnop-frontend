@@ -1,7 +1,8 @@
 import type { Post, User } from "./types";
 
 /*
- * Fictional users and posts used until the backend exists.
+ * Fictional users and posts used until the posts API is integrated.
+ * None of them is the signed-in user; that comes from the auth state.
  * Timestamps are relative to when the module loads so the feed looks recent.
  */
 
@@ -11,7 +12,7 @@ function minutesAgo(minutes: number): string {
   return new Date(now - minutes * 60_000).toISOString();
 }
 
-export const currentUser: User = {
+const nadia: User = {
   id: "user-1",
   username: "nadiakowal",
   displayName: "Nadia Kowal",
@@ -51,9 +52,9 @@ export const suggestedUsers: User[] = [tomasz, aiko, priya];
 
 export const mockPosts: Post[] = [
   {
-    // Newly created post by the current user
+    // Very recent post
     id: "post-1",
-    author: currentUser,
+    author: nadia,
     content: "First post on Hopsnop. Keeping it short and simple.",
     createdAt: minutesAgo(1),
     replyCount: 0,

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useCurrentUser } from "@/components/auth/auth-provider";
 import { PageHeader } from "@/components/layout/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
-import type { Post, User } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { FeedTabs, feedPanelId, feedTabId } from "./feed-tabs";
 import { PostComposer } from "./post-composer";
 import { PostList } from "./post-list";
@@ -15,14 +16,14 @@ const tabs = [
 
 type HomeFeedProps = {
   initialPosts: Post[];
-  viewer: User;
 };
 
 /**
  * Home page feed. Owns the local list of posts so the composer and the posts
  * share one source of truth. All changes are local until the API exists.
  */
-export function HomeFeed({ initialPosts, viewer }: HomeFeedProps) {
+export function HomeFeed({ initialPosts }: HomeFeedProps) {
+  const viewer = useCurrentUser();
   const [posts, setPosts] = useState(initialPosts);
   const [activeTab, setActiveTab] = useState("for-you");
 
