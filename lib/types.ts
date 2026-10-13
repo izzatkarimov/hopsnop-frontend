@@ -1,8 +1,8 @@
 /*
  * Frontend domain types.
- * These describe what the UI needs, not how the backend stores data. Users
- * and profiles come from the API (see lib/auth.ts and lib/profiles.ts);
- * posts are still mock data and must be aligned with the API once it exists.
+ * These describe what the UI needs, not how the backend stores data. They
+ * are made from API responses by the mappers in lib/auth.ts, lib/profiles.ts
+ * and lib/posts.ts, which is where the backend's field names end.
  */
 
 /** The little that is needed to show a person next to their content. */
@@ -24,23 +24,41 @@ export type Profile = {
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
-  /** Says that the account's content is restricted; set by the backend. */
-  isPrivate: boolean;
   followersCount: number;
   followingCount: number;
 };
 
+/** A profile as returned to someone looking at it: it adds their relation. */
+export type PublicProfile = Profile & {
+  /** Whether the current user follows this user. False without a session. */
+  followedByViewer: boolean;
+};
+
+/**
+ * A post, or a reply to one: a reply is a post with a parent. The backend
+ * only ever returns posts that are shown, so there is no deleted state.
+ */
 export type Post = {
+  /** A UUID, assigned by the backend. */
   id: string;
   author: User;
   content: string;
+  /**
+   * The post this one replies to, or null. The parent may no longer be
+   * available: a deleted post leaves its replies in place.
+   */
+  parentPostId: string | null;
+  isReply: boolean;
   /** ISO 8601 timestamp. */
   createdAt: string;
-  replyCount: number;
+  /** ISO 8601 timestamp. Equal to createdAt for a post that was never edited. */
+  updatedAt: string;
   repostCount: number;
   likeCount: number;
-  viewCount: number;
-  /** Viewer-relative state: whether the current user liked/reposted it. */
+  /**
+   * Viewer-relative state: whether the current user liked/reposted it.
+   * Always false without a session.
+   */
   likedByViewer: boolean;
   repostedByViewer: boolean;
 };

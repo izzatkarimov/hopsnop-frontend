@@ -42,6 +42,8 @@ export type ApiErrorKind =
   | "not_found"
   /** 409: the request conflicts with existing data. */
   | "conflict"
+  /** 429: too many requests of this kind were made; wait before the next. */
+  | "rate_limited"
   /** Any other 4xx, e.g. an invalid or expired token. */
   | "bad_request"
   /** 5xx, or a response that could not be understood. */
@@ -60,18 +62,25 @@ export class ApiError extends Error {
   readonly status: number | null;
   /** For "validation": the reason each field was rejected, by field name. */
   readonly fieldErrors: Record<string, string>;
+  /**
+   * For "rate_limited": how many seconds the backend said to wait, or null
+   * if it did not say.
+   */
+  readonly retryAfter: number | null;
 
   constructor(
     kind: ApiErrorKind,
     status: number | null,
     message: string,
     fieldErrors: Record<string, string> = {},
+    retryAfter: number | null = null,
   ) {
     super(message);
     this.name = "ApiError";
     this.kind = kind;
     this.status = status;
     this.fieldErrors = fieldErrors;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -79,11 +88,38 @@ export function isApiError(error: unknown): error is ApiError {
   return error instanceof ApiError;
 }
 
-/** Message for failures the user can only respond to by trying again. */
+/**
+ * Message for failures the user can only respond to by trying again, at
+ * once or, when the backend asked for that, after waiting.
+ */
 export function unexpectedErrorMessage(error: unknown): string {
+  if (isApiError(error) && error.kind === "rate_limited") {
+    return rateLimitMessage(error.retryAfter);
+  }
   return isApiError(error) && error.kind === "network"
     ? "Couldn't reach Hopsnop. Check your connection and try again."
     : "Something went wrong. Please try again.";
+}
+
+/**
+ * Says how long to wait only when the backend said so: no duration is made
+ * up for an answer that came without one.
+ */
+function rateLimitMessage(retryAfter: number | null): string {
+  if (retryAfter === null) {
+    return "Too many attempts. Please wait a while before trying again.";
+  }
+  if (retryAfter < 60) {
+    const seconds = Math.max(1, retryAfter);
+    return `Too many attempts. Please wait ${seconds} ${
+      seconds === 1 ? "second" : "seconds"
+    } before trying again.`;
+  }
+  // Rounded up, so that the wait named is never too short.
+  const minutes = Math.ceil(retryAfter / 60);
+  return `Too many attempts. Please wait about ${minutes} ${
+    minutes === 1 ? "minute" : "minutes"
+  } before trying again.`;
 }
 
 type ApiRequestOptions = {
@@ -134,7 +170,7 @@ export async function apiRequest<T>(
   }
 
   if (!response.ok) {
-    throw toApiError(response.status, data);
+    throw toApiError(response.status, data, retryAfterOf(response));
   }
   return data as T;
 }
@@ -145,11 +181,27 @@ function kindForStatus(status: number): ApiErrorKind {
   if (status === 404) return "not_found";
   if (status === 409) return "conflict";
   if (status === 422) return "validation";
+  if (status === 429) return "rate_limited";
   if (status >= 500) return "server";
   return "bad_request";
 }
 
-function toApiError(status: number, body: unknown): ApiError {
+/**
+ * The seconds to wait that a 429 response names in its Retry-After header,
+ * or null. The backend sends whole seconds; anything else, including a
+ * header that is missing or that the browser withholds, is no duration.
+ */
+function retryAfterOf(response: Response): number | null {
+  if (response.status !== 429) return null;
+  const value = response.headers.get("Retry-After")?.trim();
+  return value && /^\d{1,9}$/.test(value) ? Number(value) : null;
+}
+
+function toApiError(
+  status: number,
+  body: unknown,
+  retryAfter: number | null,
+): ApiError {
   const detail =
     typeof body === "object" && body !== null && "detail" in body
       ? body.detail
@@ -161,12 +213,15 @@ function toApiError(status: number, body: unknown): ApiError {
       status,
       "Some fields were rejected.",
       toFieldErrors(detail),
+      retryAfter,
     );
   }
   return new ApiError(
     kindForStatus(status),
     status,
     typeof detail === "string" ? detail : "The request failed.",
+    {},
+    retryAfter,
   );
 }
 

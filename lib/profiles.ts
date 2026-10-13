@@ -1,6 +1,6 @@
 import { ApiError, apiRequest, isApiError } from "./api";
 import { isUsername } from "./auth-validation";
-import type { Profile } from "./types";
+import type { Profile, PublicProfile } from "./types";
 
 /*
  * User profile endpoints of the Hopsnop API.
@@ -11,25 +11,30 @@ import type { Profile } from "./types";
  * shows.
  */
 
-/** A user as anyone may see them. Returned by GET /users/{username}. */
-export type PublicProfileResponse = {
+/** The fields that both views of a user share. */
+type ProfileFields = {
   id: string;
   username: string;
   display_name: string;
   bio: string | null;
   avatar_url: string | null;
-  is_private: boolean;
   followers_count: number;
   following_count: number;
   /** ISO 8601 timestamp. */
   created_at: string;
 };
 
+/** A user as anyone may see them. Returned by GET /users/{username}. */
+export type PublicProfileResponse = ProfileFields & {
+  /** Whether the caller follows this user. False without a session. */
+  following: boolean;
+};
+
 /**
  * A user as only they may see themselves. Returned by GET and PATCH
- * /users/me. It adds private account fields to the public profile.
+ * /users/me. It adds private account fields to the shared ones.
  */
-export type MyProfileResponse = PublicProfileResponse & {
+export type MyProfileResponse = ProfileFields & {
   email: string;
   /** ISO 8601 timestamp. */
   email_verified_at: string | null;
@@ -37,14 +42,18 @@ export type MyProfileResponse = PublicProfileResponse & {
 
 /**
  * Body of PATCH /users/me. Only the fields that are present are changed.
- * null clears bio or avatar_url; the other two cannot be cleared. The
+ * null clears bio or avatar_url; display_name cannot be cleared. The
  * username and the email address cannot be changed here at all.
  */
 export type UpdateProfileRequest = {
   display_name?: string;
   bio?: string | null;
   avatar_url?: string | null;
-  is_private?: boolean;
+};
+
+/** Returned by POST and DELETE /users/{username}/follow. */
+export type FollowResponse = {
+  following: boolean;
 };
 
 /**
@@ -52,14 +61,13 @@ export type UpdateProfileRequest = {
  * the caller's own profile, so the private fields that response carries
  * (email address, verification time) never reach application state.
  */
-function toProfile(response: PublicProfileResponse): Profile {
+function toProfile(response: ProfileFields): Profile {
   const {
     id,
     username,
     display_name: displayName,
     avatar_url: avatarUrl,
     bio,
-    is_private: isPrivate,
     followers_count: followersCount,
     following_count: followingCount,
   } = response;
@@ -70,7 +78,6 @@ function toProfile(response: PublicProfileResponse): Profile {
     typeof displayName !== "string" ||
     (typeof avatarUrl !== "string" && avatarUrl !== null) ||
     (typeof bio !== "string" && bio !== null) ||
-    typeof isPrivate !== "boolean" ||
     typeof followersCount !== "number" ||
     typeof followingCount !== "number"
   ) {
@@ -83,7 +90,6 @@ function toProfile(response: PublicProfileResponse): Profile {
     displayName,
     avatarUrl,
     bio,
-    isPrivate,
     followersCount,
     followingCount,
   };
@@ -114,7 +120,9 @@ export async function updateCurrentProfile(
  * Needs no session. The backend gives one answer for every reason a profile
  * is unavailable (unknown, deactivated, never verified), and so does this.
  */
-export async function getPublicProfile(username: string): Promise<Profile | null> {
+export async function getPublicProfile(
+  username: string,
+): Promise<PublicProfile | null> {
   // No account can have a name of another shape, so there is nothing to ask.
   // This also keeps a name like "me" from being read as the /users/me path.
   if (!isUsername(username)) return null;
@@ -123,9 +131,36 @@ export async function getPublicProfile(username: string): Promise<Profile | null
     const response = await apiRequest<PublicProfileResponse>(
       `/users/${encodeURIComponent(username)}`,
     );
-    return toProfile(response);
+    const profile = toProfile(response);
+    if (typeof response.following !== "boolean") {
+      throw new ApiError("server", null, "The server sent an unexpected profile.");
+    }
+    return { ...profile, followedByViewer: response.following };
   } catch (error) {
     if (isApiError(error) && error.kind === "not_found") return null;
     throw error;
   }
+}
+
+/**
+ * Makes the signed-in user follow the user (true) or no longer follow them
+ * (false), and returns whether they follow them afterwards according to the
+ * backend. Asking for what is already the case is not an error. Requires a
+ * session.
+ *
+ * The ApiError is "not_found" if there is no such account to follow, and
+ * "bad_request" for an attempt to follow oneself.
+ */
+export async function setFollow(
+  username: string,
+  following: boolean,
+): Promise<boolean> {
+  const response = await apiRequest<FollowResponse>(
+    `/users/${encodeURIComponent(username)}/follow`,
+    { method: following ? "POST" : "DELETE" },
+  );
+  if (typeof response?.following !== "boolean") {
+    throw new ApiError("server", null, "The server sent an unexpected answer.");
+  }
+  return response.following;
 }

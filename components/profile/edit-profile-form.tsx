@@ -21,7 +21,7 @@ import type { Profile } from "@/lib/types";
 const TEXT_FIELDS = ["displayName", "bio", "avatarUrl"] as const;
 
 type TextFieldName = (typeof TEXT_FIELDS)[number];
-type Values = Record<TextFieldName, string> & { isPrivate: boolean };
+type Values = Record<TextFieldName, string>;
 type FieldErrors = Partial<Record<TextFieldName, string>>;
 
 /** Field names in the backend's validation errors, mapped to this form's. */
@@ -59,9 +59,6 @@ function changesFrom(profile: Profile, values: Values): UpdateProfileRequest {
   if (displayName !== profile.displayName) changes.display_name = displayName;
   if (bio !== profile.bio) changes.bio = bio;
   if (avatarUrl !== profile.avatarUrl) changes.avatar_url = avatarUrl;
-  if (values.isPrivate !== profile.isPrivate) {
-    changes.is_private = values.isPrivate;
-  }
   return changes;
 }
 
@@ -107,7 +104,6 @@ export function EditProfileForm({
     displayName: profile.displayName,
     bio: profile.bio ?? "",
     avatarUrl: profile.avatarUrl ?? "",
-    isPrivate: profile.isPrivate,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -209,28 +205,6 @@ export function EditProfileForm({
         hint="A link to an image. Leave empty to use your initials."
         {...textProps("avatarUrl")}
       />
-
-      <label className="flex items-start gap-3">
-        <input
-          type="checkbox"
-          name="isPrivate"
-          checked={values.isPrivate}
-          onChange={(event) =>
-            setValues((current) => ({
-              ...current,
-              isPrivate: event.target.checked,
-            }))
-          }
-          className="mt-0.5 size-4 shrink-0 accent-accent"
-        />
-        <span>
-          <span className="block text-sm font-medium">Private account</span>
-          <span className="block text-sm text-muted">
-            Marks your account as private. Your profile itself stays visible
-            to everyone.
-          </span>
-        </span>
-      </label>
 
       <div className="flex justify-end gap-2">
         <button

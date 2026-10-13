@@ -1,16 +1,14 @@
 import { EmptyState } from "@/components/ui/empty-state";
 import type { Post } from "@/lib/types";
 import { PostItem } from "./post-item";
+import type { PostHandlers } from "./use-post-actions";
 
 type PostListProps = {
   posts: Post[];
-  viewerId: string;
-  onToggleLike: (postId: string) => void;
-  onToggleRepost: (postId: string) => void;
-  onDelete: (postId: string) => void;
+  handlers: PostHandlers;
 };
 
-export function PostList({ posts, viewerId, ...handlers }: PostListProps) {
+export function PostList({ posts, handlers }: PostListProps) {
   if (posts.length === 0) {
     return (
       <EmptyState
@@ -23,12 +21,7 @@ export function PostList({ posts, viewerId, ...handlers }: PostListProps) {
   return (
     <div>
       {posts.map((post) => (
-        <PostItem
-          key={post.id}
-          post={post}
-          isOwnPost={post.author.id === viewerId}
-          {...handlers}
-        />
+        <PostItem key={post.id} post={post} handlers={handlers} />
       ))}
     </div>
   );

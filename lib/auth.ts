@@ -21,7 +21,6 @@ export type AccountResponse = {
   display_name: string;
   bio: string | null;
   avatar_url: string | null;
-  is_private: boolean;
   is_active: boolean;
   email_verified_at: string | null;
   created_at: string;

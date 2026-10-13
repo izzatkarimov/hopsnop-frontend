@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
-import { LockIcon } from "@/components/ui/icons";
 import { formatCount } from "@/lib/format";
 import type { Profile } from "@/lib/types";
 
@@ -23,17 +22,9 @@ export function ProfileHeader({ profile, action }: ProfileHeaderProps) {
       </div>
 
       <div className="mt-3">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <h2 className="min-w-0 text-xl font-semibold leading-tight wrap-break-word">
-            {profile.displayName}
-          </h2>
-          {profile.isPrivate && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs font-medium text-muted">
-              <LockIcon width={12} height={12} />
-              Private account
-            </span>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold leading-tight wrap-break-word">
+          {profile.displayName}
+        </h2>
         <p className="text-body text-muted">@{profile.username}</p>
       </div>
 

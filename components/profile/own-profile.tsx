@@ -8,6 +8,7 @@ import { getCurrentProfile } from "@/lib/profiles";
 import type { Profile } from "@/lib/types";
 import { EditProfileForm } from "./edit-profile-form";
 import { ProfileHeader } from "./profile-header";
+import { ProfilePosts } from "./profile-posts";
 import { ProfileSkeleton } from "./profile-skeleton";
 
 type State =
@@ -123,9 +124,9 @@ export function OwnProfile() {
       <p role="status" className="sr-only">
         {announcement}
       </p>
-      <EmptyState
-        title="Posts are coming soon"
-        description="Your posts will appear here."
+      <ProfilePosts
+        username={state.profile.username}
+        displayName={state.profile.displayName}
       />
     </>
   );

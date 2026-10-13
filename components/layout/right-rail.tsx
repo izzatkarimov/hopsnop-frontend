@@ -1,7 +1,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { suggestedUsers } from "@/lib/mock-data";
 
-/** Secondary column on wide screens. Display-only until follows exist. */
+/** Secondary column on wide screens. Display-only: these are mock users. */
 export function RightRail() {
   return (
     <aside

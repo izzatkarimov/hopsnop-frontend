@@ -1,10 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
-import {
-  HeartIcon,
-  ReplyIcon,
-  RepostIcon,
-  ViewsIcon,
-} from "@/components/ui/icons";
+import Link from "next/link";
+import { HeartIcon, ReplyIcon, RepostIcon } from "@/components/ui/icons";
 import { formatCount } from "@/lib/format";
 import type { Post } from "@/lib/types";
 
@@ -24,7 +20,8 @@ const tones = {
 
 type ActionButtonProps = {
   label: string;
-  count: number;
+  /** Left out for an action the backend keeps no count of. */
+  count?: number;
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   tone: keyof typeof tones;
   /** Toggle state; omit for non-toggle actions. */
@@ -69,39 +66,57 @@ function ActionButton({
           fill={pressed && fillWhenPressed ? "currentColor" : "none"}
         />
       </span>
-      <span className="sr-only">{label}, </span>
-      <span>{formatCount(count)}</span>
+      <span className="sr-only">
+        {label}
+        {count !== undefined && ", "}
+      </span>
+      {count !== undefined && <span>{formatCount(count)}</span>}
     </button>
   );
 }
 
 type PostActionsProps = {
   post: Post;
+  /** Where a reply to the post is written. */
+  replyHref: string;
+  /** For a visitor without a session, who can neither like nor repost. */
+  disabled?: boolean;
   onToggleLike: () => void;
   onToggleRepost: () => void;
 };
 
 export function PostActions({
   post,
+  replyHref,
+  disabled,
   onToggleLike,
   onToggleRepost,
 }: PostActionsProps) {
+  const signInHint = disabled ? "Log in to like or repost" : undefined;
+
   return (
     <div className="-ml-2 mt-1 flex max-w-md items-center justify-between text-muted">
-      <ActionButton
-        label="Reply (coming soon)"
-        count={post.replyCount}
-        icon={ReplyIcon}
-        tone="accent"
-        disabled
-        title="Replies are coming soon"
-      />
+      {/* A link, not a button: replying happens on the post's own page. The
+          backend keeps no count of replies, so none is shown. */}
+      <Link
+        href={replyHref}
+        aria-label="Reply"
+        className={`group flex items-center rounded-full transition-colors ${tones.accent.hover}`}
+      >
+        <span
+          className={`rounded-full p-2 transition-colors ${tones.accent.iconHover}`}
+        >
+          <ReplyIcon width={18} height={18} />
+        </span>
+      </Link>
       <ActionButton
         label="Repost"
         count={post.repostCount}
         icon={RepostIcon}
         tone="accent"
         pressed={post.repostedByViewer}
+        disabled={disabled}
+        title={signInHint}
         onClick={onToggleRepost}
       />
       <ActionButton
@@ -111,15 +126,10 @@ export function PostActions({
         tone="like"
         pressed={post.likedByViewer}
         fillWhenPressed
+        disabled={disabled}
+        title={signInHint}
         onClick={onToggleLike}
       />
-      <span className="flex items-center gap-0.5 text-sm tabular-nums">
-        <span className="p-2">
-          <ViewsIcon width={18} height={18} />
-        </span>
-        <span className="sr-only">Views, </span>
-        <span>{formatCount(post.viewCount)}</span>
-      </span>
     </div>
   );
 }

@@ -2,16 +2,18 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
-import { CopyIcon, MoreIcon, TrashIcon } from "@/components/ui/icons";
+import { CopyIcon, EditIcon, MoreIcon, TrashIcon } from "@/components/ui/icons";
 
 type PostMenuProps = {
   content: string;
+  /** Provided only while the viewer may edit the post (their own, recent). */
+  onEdit?: () => void;
   /** Provided only when the viewer may delete the post (their own post). */
   onDelete?: () => void;
 };
 
 /** "More" button with a small dropdown of post actions. */
-export function PostMenu({ content, onDelete }: PostMenuProps) {
+export function PostMenu({ content, onEdit, onDelete }: PostMenuProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -90,6 +92,11 @@ export function PostMenu({ content, onDelete }: PostMenuProps) {
     }
   }
 
+  function handleEdit() {
+    setOpen(false);
+    onEdit?.();
+  }
+
   function handleDelete() {
     setOpen(false);
     onDelete?.();
@@ -131,6 +138,17 @@ export function PostMenu({ content, onDelete }: PostMenuProps) {
             <CopyIcon width={18} height={18} />
             Copy text
           </button>
+          {onEdit && (
+            <button
+              type="button"
+              role="menuitem"
+              onClick={handleEdit}
+              className={itemClass}
+            >
+              <EditIcon width={18} height={18} />
+              Edit post
+            </button>
+          )}
           {onDelete && (
             <button
               type="button"
