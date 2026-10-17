@@ -102,7 +102,8 @@ export function PostComposer({
       setStatus(wording.published);
     } catch (error) {
       if (isApiError(error) && error.kind === "unauthenticated") {
-        // The session is gone. RequireAuth leads to the login page.
+        // The session is gone. RequireAuth leads to the login page; a
+        // public page goes on as for a signed-out visitor.
         expireSession();
         return;
       }

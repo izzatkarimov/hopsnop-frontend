@@ -103,9 +103,10 @@ export function useFeed(loadPage: LoadPage, enabled: boolean): Feed {
       (error: unknown) => {
         if (ignore) return;
         if (isApiError(error) && error.kind === "unauthenticated") {
-          // The session is gone. RequireAuth leads to the login page.
+          // The session is gone. RequireAuth leads to the login page, but a
+          // public page stays where it is, so the feed must not be left
+          // waiting: it fails like any other request.
           expireSession();
-          return;
         }
         setState({ status: "error", message: unexpectedErrorMessage(error) });
       },
@@ -146,9 +147,10 @@ export function useFeed(loadPage: LoadPage, enabled: boolean): Feed {
           : current,
       );
     } catch (error) {
+      // As for the first page: the session is ended, and the feed still
+      // says that this page could not be loaded.
       if (isApiError(error) && error.kind === "unauthenticated") {
         expireSession();
-        return;
       }
       // The posts already shown stay, and so does the cursor: the same page
       // can be asked for again.

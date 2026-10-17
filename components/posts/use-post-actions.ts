@@ -157,7 +157,8 @@ export function usePostActions(containers: PostContainer[]): PostActions {
     } catch (error) {
       show(before.active, before.count);
       if (isUnauthenticated(error)) {
-        // The session is gone. RequireAuth leads to the login page.
+        // The session is gone. RequireAuth leads to the login page; a
+        // public page goes on as for a signed-out visitor.
         expireSession();
       } else if (isNotFound(error)) {
         // Deleted since it was loaded: there is nothing left to show.

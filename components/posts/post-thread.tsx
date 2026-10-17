@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useCurrentUser } from "@/components/auth/auth-provider";
+import { useAuth } from "@/components/auth/auth-provider";
 import { EmptyState } from "@/components/ui/empty-state";
 import { unexpectedErrorMessage } from "@/lib/api";
 import { createPost, getPost, listReplies } from "@/lib/posts";
@@ -80,9 +80,13 @@ function useLoadedPost(postId: string | null, attempt: number) {
  * A post's own page: the post it answers, if it is a reply; the post; a
  * place to reply to it; and its direct replies, newest first. Replies to
  * those replies are on their own pages.
+ *
+ * Anyone may read it. Replying needs a session, so a visitor without one is
+ * asked to log in instead; the backend refuses a reply without one anyway.
  */
 export function PostThread({ postId }: { postId: string }) {
-  const viewer = useCurrentUser();
+  const auth = useAuth();
+  const viewer = auth.status === "authenticated" ? auth.user : null;
   const [attempt, setAttempt] = useState(0);
   const [parentAttempt, setParentAttempt] = useState(0);
 
@@ -150,9 +154,17 @@ export function PostThread({ postId }: { postId: string }) {
           title="This post is unavailable"
           description="It may have been deleted, or the link may be wrong."
           action={
-            <Link href="/" className={buttonClass}>
-              Go to Home
-            </Link>
+            // Home needs a session: a visitor without one would only be
+            // sent on to the login page from there.
+            viewer ? (
+              <Link href="/" className={buttonClass}>
+                Go to Home
+              </Link>
+            ) : (
+              <Link href="/login" className={buttonClass}>
+                Log in
+              </Link>
+            )
           }
         />
       </>
@@ -179,7 +191,18 @@ export function PostThread({ postId }: { postId: string }) {
 
       {/* Below the sticky header when the reply control scrolls here. */}
       <div id="reply" className="scroll-mt-32">
-        <PostComposer viewer={viewer} kind="reply" onSubmit={reply} />
+        {viewer ? (
+          <PostComposer viewer={viewer} kind="reply" onSubmit={reply} />
+        ) : (
+          <p className="border-b border-border px-4 py-3 text-body">
+            <Link
+              href="/login"
+              className="font-semibold text-accent hover:underline"
+            >
+              Log in to reply
+            </Link>
+          </p>
+        )}
       </div>
 
       <section aria-label="Replies">

@@ -18,6 +18,11 @@ export function postHref(postId: string): string {
   return `/posts/${encodeURIComponent(postId)}`;
 }
 
+/** Where a user's public profile is. */
+export function profileHref(username: string): string {
+  return `/users/${encodeURIComponent(username)}`;
+}
+
 type PostItemProps = {
   post: Post;
   handlers: PostHandlers;
@@ -60,13 +65,29 @@ export function PostItem({ post, handlers, replyHref }: PostItemProps) {
       aria-label={`Post by ${author.displayName}`}
       className="flex gap-3 border-b border-border px-4 pt-3 pb-1"
     >
-      <Avatar user={author} />
+      {/* The same link as the author's name, for the pointer only: keyboard
+          and screen reader users reach the profile once, by name. */}
+      <Link
+        href={profileHref(author.username)}
+        tabIndex={-1}
+        aria-hidden="true"
+        className="shrink-0 self-start rounded-full"
+      >
+        <Avatar user={author} />
+      </Link>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1 text-body">
           <div className="flex min-w-0 flex-1 items-baseline gap-1">
-            <span className="truncate font-semibold">{author.displayName}</span>
-            <span className="truncate text-muted">@{author.username}</span>
+            <Link
+              href={profileHref(author.username)}
+              className="group flex min-w-0 items-baseline gap-1"
+            >
+              <span className="truncate font-semibold group-hover:underline">
+                {author.displayName}
+              </span>
+              <span className="truncate text-muted">@{author.username}</span>
+            </Link>
             <span aria-hidden="true" className="text-muted">
               ·
             </span>
