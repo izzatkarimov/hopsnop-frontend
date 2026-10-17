@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Notice } from "@/components/ui/notice";
 import { isApiError, unexpectedErrorMessage } from "@/lib/api";
 import { verifyEmail } from "@/lib/auth";
+import { AuthScreen } from "./auth-screen";
 import { ResendVerificationForm } from "./resend-verification-form";
 import { primaryActionClass, textLinkClass } from "./styles";
 
@@ -78,19 +78,19 @@ export function VerifyEmail() {
 
     case "verified":
       return (
-        <Screen title="Email verified">
+        <AuthScreen title="Email verified">
           <p role="status" className="text-muted">
             Your account is ready. You can log in now.
           </p>
           <Link href="/login" className={primaryActionClass}>
             Log in
           </Link>
-        </Screen>
+        </AuthScreen>
       );
 
     case "invalid":
       return (
-        <Screen title="This link didn't work">
+        <AuthScreen title="This link didn't work">
           <Notice tone="error">
             The verification link is invalid or has expired.
           </Notice>
@@ -102,22 +102,22 @@ export function VerifyEmail() {
             . Otherwise, request a new link below.
           </p>
           <ResendVerificationForm />
-        </Screen>
+        </AuthScreen>
       );
 
     case "error":
       return (
-        <Screen title="Couldn't verify your email">
+        <AuthScreen title="Couldn't verify your email">
           <Notice tone="error">{state.message}</Notice>
           <button type="button" onClick={retry} className={primaryActionClass}>
             Try again
           </button>
-        </Screen>
+        </AuthScreen>
       );
 
     case "waiting":
       return (
-        <Screen title="Verify your email">
+        <AuthScreen title="Verify your email">
           <p className="text-muted">
             Check your inbox for the verification link we sent when you
             registered. Open it to activate your account.
@@ -129,22 +129,7 @@ export function VerifyEmail() {
               Back to log in
             </Link>
           </p>
-        </Screen>
+        </AuthScreen>
       );
   }
-}
-
-function Screen({
-  title,
-  children,
-}: {
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      {children}
-    </div>
-  );
 }

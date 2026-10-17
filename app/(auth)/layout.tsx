@@ -1,8 +1,9 @@
 import { Wordmark } from "@/components/ui/wordmark";
 
 /**
- * Layout for the pages used while signed out: log in, register and email
- * verification. A route group of its own, so it does not get the app shell.
+ * Layout for the pages used while signed out: log in, register, email
+ * verification and password reset. A route group of its own, so it does not
+ * get the app shell.
  */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (

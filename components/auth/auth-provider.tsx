@@ -28,7 +28,10 @@ type AuthActions = {
   logIn: (credentials: LoginRequest) => Promise<void>;
   /** Rejects if the session could not be ended on the server. */
   logOut: () => Promise<void>;
-  /** Checks the session again after a failed check. */
+  /**
+   * Checks the session again: after a failed check, or after something that
+   * may have ended it on the server, such as a password reset.
+   */
   retry: () => void;
   /**
    * Applies a profile change that also affects how the signed-in user is

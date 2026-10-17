@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import type { FormEvent } from "react";
 import Link from "next/link";
 import { Notice } from "@/components/ui/notice";
@@ -9,6 +9,7 @@ import { isApiError, unexpectedErrorMessage } from "@/lib/api";
 import { isEmailNotVerifiedError } from "@/lib/auth";
 import { useAuth } from "./auth-provider";
 import { PasswordField } from "./password-field";
+import { PasswordResetNotice } from "./password-reset-notice";
 import { primaryActionClass, textLinkClass } from "./styles";
 
 type Failure =
@@ -59,6 +60,11 @@ export function LoginForm() {
         Log in to Hopsnop
       </h1>
 
+      {/* The note reads the URL, which is only known in the browser. Its own
+          boundary lets the rest of the form be prerendered without it. */}
+      <Suspense fallback={null}>
+        <PasswordResetNotice />
+      </Suspense>
       {failure && <FailureNotice failure={failure} />}
 
       <TextField
@@ -83,6 +89,12 @@ export function LoginForm() {
       <button type="submit" disabled={submitting} className={primaryActionClass}>
         {submitting ? "Logging in…" : "Log in"}
       </button>
+
+      <p className="text-center text-sm">
+        <Link href="/forgot-password" className={textLinkClass}>
+          Forgot password?
+        </Link>
+      </p>
 
       <p className="text-center text-sm text-muted">
         New to Hopsnop?{" "}

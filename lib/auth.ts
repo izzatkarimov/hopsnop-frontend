@@ -26,7 +26,10 @@ export type AccountResponse = {
   created_at: string;
 };
 
-/** Returned by /auth/verify-email and /auth/resend-verification. */
+/**
+ * Returned by /auth/verify-email, /auth/resend-verification,
+ * /auth/forgot-password and /auth/reset-password.
+ */
 export type MessageResponse = {
   message: string;
 };
@@ -127,6 +130,33 @@ export async function resendVerification(email: string): Promise<void> {
   await apiRequest<MessageResponse>("/auth/resend-verification", {
     method: "POST",
     body: { email },
+  });
+}
+
+/**
+ * Asks for a password reset link. As with resendVerification(), the backend
+ * answers the same way whether or not the address belongs to an account, so
+ * success says nothing about it.
+ */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await apiRequest<MessageResponse>("/auth/forgot-password", {
+    method: "POST",
+    body: { email },
+  });
+}
+
+/**
+ * Redeems the single-use token from a reset link and sets the new password.
+ * The backend also ends every session of the account, on every device, and
+ * does not start a new one: the user logs in again with the new password.
+ */
+export async function resetPassword(
+  token: string,
+  newPassword: string,
+): Promise<void> {
+  await apiRequest<MessageResponse>("/auth/reset-password", {
+    method: "POST",
+    body: { token, new_password: newPassword },
   });
 }
 
